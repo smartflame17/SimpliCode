@@ -1,1 +1,1 @@
-# SImpliCode
+# SimpliCode
