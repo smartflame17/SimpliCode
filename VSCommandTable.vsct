@@ -21,7 +21,7 @@
         <Icon guid="ImageCatalogGuid" id="StatusInformation" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>My Command</ButtonText>
+          <ButtonText>Detect Duplicates</ButtonText>
           <LocCanonicalName>.simplicode.MyCommand</LocCanonicalName>
         </Strings>
       </Button>

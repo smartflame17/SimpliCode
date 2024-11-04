@@ -13,13 +13,13 @@ namespace simplicode.Utils
         //default value is 1.0, meaning only exactly same lines are considered similar
         double threshold = 1.0;
 
-        //default value is 5, any line size less than this will be ignored
-        int minBlockSize = 5;
+        //default value is 10, any line size less than this will be ignored
+        int minBlockSize = 10;
 
         public StringSimilarity() { }
 
         //constructor with default value
-        public StringSimilarity(double threshold = 1.0, int minBlockSize = 5)
+        public StringSimilarity(double threshold = 1.0, int minBlockSize = 10)
         {
             this.threshold = threshold;
             this.minBlockSize = minBlockSize;
@@ -44,6 +44,8 @@ namespace simplicode.Utils
                 {
                     if (lines[j].Length < minBlockSize) continue;
                     if (!IsValidLine(lines[j])) continue;
+
+                    //currently used algorithm (subject to change), algorithm must produce normal double values (between 0 to 1)
                     var algo = new RatcliffObershelp();
                     double similarity = algo.Similarity(lines[i], lines[j]);
 
@@ -63,6 +65,46 @@ namespace simplicode.Utils
             var result = new Tuple<List<string>, double>(twoStrings, max_similarity);
             return result;
         }
+
+        public List<List<int>> GetSimilarLineNums(List<string> lines) 
+        { 
+            List<List<int>> result = new List<List<int>>();
+            //checks whether current line is already selected as result (to prevent multiple checking over same line)
+            bool[] lineNums = new bool[lines.Count];
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (lines[i].Length < minBlockSize) continue;
+                if (!IsValidLine(lines[i])) continue;
+                if (lineNums[i]) continue;
+                List<int> sameNums = new List<int>();
+                sameNums.Add(i);
+                lineNums[i] = true;
+
+                for (int j = i + 1; j < lines.Count; j++)
+                {
+                    if (lines[j].Length < minBlockSize) continue;
+                    if (!IsValidLine(lines[j])) continue;
+                    if (lineNums[j]) continue;
+                    //currently used algorithm (subject to change), algorithm must produce normal double values (between 0 to 1)
+                    var algo = new RatcliffObershelp();
+                    double similarity = algo.Similarity(lines[i], lines[j]);
+
+                    if (similarity >= this.threshold)
+                    {
+                        sameNums.Add(j);
+                        lineNums[j] = true;
+                    }
+
+                }
+                if (sameNums.Count > 1)
+                {
+                    result.Add(sameNums);
+                }
+            }
+            return result;
+        }
+
         //Returns whether line is a function declaration which uses :: for namespace 
         public bool IsFunctionDeclaration(string str)
         {
@@ -71,6 +113,7 @@ namespace simplicode.Utils
 
             return isFunction.IsMatch(str);
         }
+
         //Returns whether line is a one-line comment
         public bool IsComment(string str)
         {
@@ -79,6 +122,7 @@ namespace simplicode.Utils
 
             return isComment.IsMatch(str);
         }
+
         //Returns whether line is an '#include' or '#pragma' for header files and warnings using regex
         public bool IsInclude(string str)
         {
@@ -87,6 +131,7 @@ namespace simplicode.Utils
 
             return hasSharp.IsMatch(str);
         }
+
         //Returns whether line is an valid string for string similarity
         public bool IsValidLine(string str)
         {
