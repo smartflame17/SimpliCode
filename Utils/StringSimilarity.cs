@@ -123,6 +123,15 @@ namespace simplicode.Utils
             return isComment.IsMatch(str);
         }
 
+        public bool IsMultiLineComment(string str)
+        {
+            if (str == null) return false;
+            Regex isStartofComment = new Regex("/\\*", RegexOptions.IgnoreCase);
+            Regex isEndofComment = new Regex("\\*/", RegexOptions.IgnoreCase);
+
+            return isStartofComment.IsMatch(str) || isEndofComment.IsMatch(str);
+        }
+
         //Returns whether line is an '#include' or '#pragma' for header files and warnings using regex
         public bool IsInclude(string str)
         {
@@ -136,7 +145,7 @@ namespace simplicode.Utils
         public bool IsValidLine(string str)
         {
             if (str == null) return false;
-            if (IsFunctionDeclaration(str) || IsComment(str) || IsInclude(str)) return false;
+            if (IsFunctionDeclaration(str) || IsComment(str) || IsInclude(str) || IsMultiLineComment(str)) return false;
             else return true;
         }
     }
