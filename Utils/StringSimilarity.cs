@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using simplicode.Utils;
 using F23.StringSimilarity;
 
 namespace simplicode.Utils
@@ -14,20 +14,34 @@ namespace simplicode.Utils
         double threshold = 1.0;
 
         //default value is 10, any line size less than this will be ignored
-        int minBlockSize = 10;
+        int BlockSize = 10;
+
+        private double minThreshold = 0.5;
+
+        private int minBlockSize = 10;
 
         public StringSimilarity() { }
 
         //constructor with default value
-        public StringSimilarity(double threshold = 1.0, int minBlockSize = 10)
+        public StringSimilarity(double threshold = 1.0, int BlockSize = 10)
         {
             this.threshold = threshold;
-            this.minBlockSize = minBlockSize;
+            this.BlockSize = BlockSize;
+
+            //added checking for illegal / breaking values
+            if (threshold > 1.0 || threshold < minThreshold)
+            {
+                this.threshold = minThreshold;
+            }
+            if (BlockSize < minBlockSize || BlockSize < 0)
+            {
+                this.BlockSize = minBlockSize;
+            }
         }
         //setter for threshold
         public void SetThreshold(double threshold) { this.threshold = threshold; }
         //setter for blockSize
-        public void SetMinBlockSize(int blockSize) { this.minBlockSize = blockSize; }
+        public void SetBlockSize(int blockSize) { this.BlockSize = blockSize; }
 
 
         //gets the two most similar lines in a document(list of strings) and its similarity (normal value between 0 and 1)
@@ -38,12 +52,12 @@ namespace simplicode.Utils
 
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].Length < minBlockSize) continue;
-                if (!IsValidLine(lines[i])) continue;
+                if (lines[i].Length < BlockSize) continue;
+                if (!StringUtils.IsValidLine(lines[i])) continue;
                 for (int j = i + 1; j < lines.Count; j++)
                 {
-                    if (lines[j].Length < minBlockSize) continue;
-                    if (!IsValidLine(lines[j])) continue;
+                    if (lines[j].Length < BlockSize) continue;
+                    if (!StringUtils.IsValidLine(lines[j])) continue;
 
                     //currently used algorithm (subject to change), algorithm must produce normal double values (between 0 to 1)
                     var algo = new RatcliffObershelp();
@@ -74,8 +88,8 @@ namespace simplicode.Utils
 
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].Length < minBlockSize) continue;
-                if (!IsValidLine(lines[i])) continue;
+                if (lines[i].Length < BlockSize) continue;
+                if (!StringUtils.IsValidLine(lines[i])) continue;
                 if (lineNums[i]) continue;
                 List<int> sameNums = new List<int>();
                 sameNums.Add(i);
@@ -83,8 +97,8 @@ namespace simplicode.Utils
 
                 for (int j = i + 1; j < lines.Count; j++)
                 {
-                    if (lines[j].Length < minBlockSize) continue;
-                    if (!IsValidLine(lines[j])) continue;
+                    if (lines[j].Length < BlockSize) continue;
+                    if (!StringUtils.IsValidLine(lines[j])) continue;
                     if (lineNums[j]) continue;
                     //currently used algorithm (subject to change), algorithm must produce normal double values (between 0 to 1)
                     var algo = new RatcliffObershelp();
@@ -102,51 +116,30 @@ namespace simplicode.Utils
                     result.Add(sameNums);
                 }
             }
+
+            //needs post-processing for results
+            //get the current scope of given line in code, use the scope to determine whether they are calls to similar yet different functions
+            foreach (List<int> similarLines in result)
+            {
+                for(int i = 0; i < similarLines.Count; i++)
+                {
+                    for (int j = i + 1; j < similarLines.Count; j++)
+                    {
+                        if (StringUtils.getCurrentScope(lines, similarLines[i]) == StringUtils.getCurrentScope(lines, similarLines[j]))
+                        {
+                            //within same scope (function)
+                            //TODO: Logic for adjusting similar code within same scope (should be stricter)
+                        }
+                        else
+                        {
+                            //different scope
+                            //TODO: Logic for adjusting similar code within different scope (should allow more similar code a.k.a basic / universial method calls)
+                        }
+                    }
+                }
+            }
+
             return result;
-        }
-
-        //Returns whether line is a function declaration which uses :: for namespace 
-        public bool IsFunctionDeclaration(string str)
-        {
-            if (str == null) return false;
-            Regex isFunction = new Regex("[A-Za-z]+.*::.*\\(.*\\)", RegexOptions.IgnoreCase);
-
-            return isFunction.IsMatch(str);
-        }
-
-        //Returns whether line is a one-line comment
-        public bool IsComment(string str)
-        {
-            if (str == null) return false;
-            Regex isComment = new Regex(@"//", RegexOptions.IgnoreCase);
-
-            return isComment.IsMatch(str);
-        }
-
-        public bool IsMultiLineComment(string str)
-        {
-            if (str == null) return false;
-            Regex isStartofComment = new Regex("/\\*", RegexOptions.IgnoreCase);
-            Regex isEndofComment = new Regex("\\*/", RegexOptions.IgnoreCase);
-
-            return isStartofComment.IsMatch(str) || isEndofComment.IsMatch(str);
-        }
-
-        //Returns whether line is an '#include' or '#pragma' for header files and warnings using regex
-        public bool IsInclude(string str)
-        {
-            if (str == null) return false;
-            Regex hasSharp = new Regex("\\B#([A-Za-z0-9]{2,})(?![~!@#$%^&*()=+_`\\-\\|\\/'\\[\\]\\{\\}]|[?.,]*\\w)", RegexOptions.IgnoreCase);
-
-            return hasSharp.IsMatch(str);
-        }
-
-        //Returns whether line is an valid string for string similarity
-        public bool IsValidLine(string str)
-        {
-            if (str == null) return false;
-            if (IsFunctionDeclaration(str) || IsComment(str) || IsInclude(str) || IsMultiLineComment(str)) return false;
-            else return true;
         }
     }
 }
