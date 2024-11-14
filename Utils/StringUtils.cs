@@ -22,7 +22,7 @@ namespace simplicode.Utils
         public static bool IsComment(string str)
         {
             if (str == null) return false;
-            Regex isComment = new Regex(@"//", RegexOptions.IgnoreCase);
+            Regex isComment = new Regex(@"^//", RegexOptions.IgnoreCase);
 
             return isComment.IsMatch(str);
         }
