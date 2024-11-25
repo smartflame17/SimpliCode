@@ -1,10 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using simplicode.Utils;
 using F23.StringSimilarity;
+using System.Diagnostics;
 
 namespace simplicode.Utils
 {
@@ -141,5 +143,74 @@ namespace simplicode.Utils
 
             return result;
         }
+
+        public List<List<int>> GetSimilarLinesWithBlocksize(List<string> lines)
+        {
+            //TODO: parse lines by block size, and perform string silimarity check
+            List<List<int>> result = new List<List<int>>();
+            var chunkedLines = new List<(string Block, List<int> LineNums)>();
+
+            //Turns lines into chunks with size of BlockSize
+            for (int i = 0; i < lines.Count; i+= BlockSize)
+            {
+                int count = Math.Min(BlockSize, lines.Count - i);
+                var currentBlockStrings = lines.GetRange(i, count);
+                
+                var LineNums = new List<int>();
+                for(int j = 0; j < count; j++)
+                {
+                    //Line Numbers are 1-based
+                    LineNums.Add(i+j+1);
+                }
+                string block = string.Join("", currentBlockStrings);
+                chunkedLines.Add((block, LineNums));
+            }
+
+            //Perform string similarity calculation on each chunk
+            for (int i = 0; i < chunkedLines.Count; i++)
+            {
+                for (int j = i + 1; j < chunkedLines.Count; j++)
+                {
+                    var algo = new RatcliffObershelp();
+                    double similarity = algo.Similarity(chunkedLines[i].Block, chunkedLines[j].Block);
+
+                    if (similarity < this.threshold)
+                    {
+                        //Chunks contain similar code
+                        using (StringReader reader1 = new StringReader(chunkedLines[i].Block))
+                        {
+                            string line1;
+                            int lineIndex1 = 0;
+
+                            //get Line from block[i]
+                            while((line1 = reader1.ReadLine()) != null)
+                            {
+                                using (StringReader reader2 = new StringReader(chunkedLines[j].Block))
+                                {
+                                    string line2;
+                                    int lineIndex2 = 0;
+
+                                    //get Line from block[j]
+                                    while ((line2 = reader2.ReadLine()) != null)
+                                    {
+                                        similarity = algo.Similarity(line1, line2);
+
+                                        if (similarity < this.threshold)
+                                        {
+                                            //TODO : append to result
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                   
+                    }
+                }
+            }
+            return result;
+        }
+            
     }
+
+        
 }
