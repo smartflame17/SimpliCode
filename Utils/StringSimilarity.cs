@@ -12,6 +12,9 @@ namespace simplicode.Utils
 {
     public class StringSimilarity
     {
+        //default value is 0.5, blocks below this threshold will not be selected for comparison
+        double blockThreshold = 0.5;
+
         //default value is 1.0, meaning only exactly same lines are considered similar
         double threshold = 1.0;
 
@@ -21,6 +24,8 @@ namespace simplicode.Utils
         private double minThreshold = 0.5;
 
         private int minBlockSize = 10;
+
+        private int minLineSize = 10;
 
         public StringSimilarity() { }
 
@@ -90,7 +95,7 @@ namespace simplicode.Utils
 
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].Length < BlockSize) continue;
+                if (lines[i].Length < minLineSize) continue;
                 if (!StringUtils.IsValidLine(lines[i])) continue;
                 if (lineNums[i]) continue;
                 List<int> sameNums = new List<int>();
@@ -99,7 +104,7 @@ namespace simplicode.Utils
 
                 for (int j = i + 1; j < lines.Count; j++)
                 {
-                    if (lines[j].Length < BlockSize) continue;
+                    if (lines[j].Length < minLineSize) continue;
                     if (!StringUtils.IsValidLine(lines[j])) continue;
                     if (lineNums[j]) continue;
                     //currently used algorithm (subject to change), algorithm must produce normal double values (between 0 to 1)
@@ -144,10 +149,119 @@ namespace simplicode.Utils
             return result;
         }
 
-        public List<List<int>> GetSimilarLinesWithBlocksize(List<string> lines)
+        public List<List<int>> GetSimilarLinesFromTwoBlocks((string Block, List<int> LineNums) Block1, (string Block, List<int> LineNums) Block2)
         {
-            //TODO: parse lines by block size, and perform string silimarity check
             List<List<int>> result = new List<List<int>>();
+            double similarity;
+            var algo = new RatcliffObershelp();
+
+            using (StringReader reader1 = new StringReader(Block1.Block))
+            {
+                string line1;
+                int lineIndex1 = 0;
+                
+                //get Line from block1
+                while ((line1 = reader1.ReadLine()) != null)
+                {
+
+                    if (!StringUtils.IsValidLine(line1))
+                    {
+                        lineIndex1++;
+                        continue;
+                    }
+                    if (line1.Length < minLineSize)
+                    {
+                        lineIndex1++;
+                        continue;
+                    }
+                    List<int> sameNums = new List<int>();
+                    sameNums.Add(Block1.LineNums[lineIndex1]);
+                    using (StringReader reader2 = new StringReader(Block2.Block))
+                    {
+                        string line2;
+                        int lineIndex2 = 0;
+
+                        //get Line from block2
+                        while ((line2 = reader2.ReadLine()) != null)
+                        {
+                            
+                            if (!StringUtils.IsValidLine(line2))
+                            {
+                                lineIndex2++;
+                                continue;
+                            }
+                            if (line2.Length < minLineSize)
+                            {
+                                lineIndex2++;
+                                continue;
+                            }
+                            similarity = algo.Similarity(line1, line2);
+
+                            if (similarity >= this.threshold)
+                            {
+                                //TODO : append to result
+                                sameNums.Add(Block2.LineNums[lineIndex2]);
+                            }
+                            lineIndex2++;
+                        }
+                    }
+                    lineIndex1++;
+                    if (sameNums.Count > 1)
+                    {
+                        result.Add(sameNums);
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        public List<List<int>> mergeResult(List<List<int>> result)
+        {
+            bool merged;
+            do
+            {
+                merged = false;
+                var newLists = new List<List<int>>();
+
+                while (result.Count > 0)
+                {
+                    // Take the first list
+                    var currentList = result[0];
+                    result.RemoveAt(0);
+
+                    // Find all lists that overlap with the current list
+                    var overlappingLists = result.Where(l => l.Any(currentList.Contains)).ToList();
+
+                    if (overlappingLists.Count > 0)
+                    {
+                        // Merge overlapping lists into the current list
+                        foreach (var overlap in overlappingLists)
+                        {
+                            currentList = currentList.Union(overlap).ToList();
+                            result.Remove(overlap);
+                        }
+
+                        merged = true;
+                    }
+
+                    // Add the merged list to the new list of lists
+                    newLists.Add(currentList);
+                }
+
+                // Update the lists for the next iteration
+                result = newLists;
+
+            } while (merged);
+
+            return result;
+        }
+
+        public List<List<int>> GetSimilarLinesWithBlockSize(List<string> lines)
+        {
+            //Parse lines by block size, and perform string silimarity check
+            List<List<int>> result = new List<List<int>>();
+
             var chunkedLines = new List<(string Block, List<int> LineNums)>();
 
             //Turns lines into chunks with size of BlockSize
@@ -159,10 +273,10 @@ namespace simplicode.Utils
                 var LineNums = new List<int>();
                 for(int j = 0; j < count; j++)
                 {
-                    //Line Numbers are 1-based
-                    LineNums.Add(i+j+1);
+                    //Line Numbers are 0-based
+                    LineNums.Add(i+j);
                 }
-                string block = string.Join("", currentBlockStrings);
+                string block = string.Join("\n", currentBlockStrings);
                 chunkedLines.Add((block, LineNums));
             }
 
@@ -174,39 +288,16 @@ namespace simplicode.Utils
                     var algo = new RatcliffObershelp();
                     double similarity = algo.Similarity(chunkedLines[i].Block, chunkedLines[j].Block);
 
-                    if (similarity < this.threshold)
+                    if (similarity >= this.blockThreshold)
                     {
                         //Chunks contain similar code
-                        using (StringReader reader1 = new StringReader(chunkedLines[i].Block))
-                        {
-                            string line1;
-                            int lineIndex1 = 0;
-
-                            //get Line from block[i]
-                            while((line1 = reader1.ReadLine()) != null)
-                            {
-                                using (StringReader reader2 = new StringReader(chunkedLines[j].Block))
-                                {
-                                    string line2;
-                                    int lineIndex2 = 0;
-
-                                    //get Line from block[j]
-                                    while ((line2 = reader2.ReadLine()) != null)
-                                    {
-                                        similarity = algo.Similarity(line1, line2);
-
-                                        if (similarity < this.threshold)
-                                        {
-                                            //TODO : append to result
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                   
+                        var tmp = GetSimilarLinesFromTwoBlocks(chunkedLines[i], chunkedLines[j]);
+                        result.AddRange(tmp);
                     }
                 }
             }
+            //merge lists with at least one same elements together
+            result = mergeResult(result);
             return result;
         }
             

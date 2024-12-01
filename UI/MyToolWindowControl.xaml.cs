@@ -44,7 +44,8 @@ namespace simplicode.UI
                 var threshold = OptionsPage.Instance.SimilarityThreshold;
                 var blockSize = OptionsPage.Instance.CodeBlockSize;
                 var stringSimilarity = new StringSimilarity(threshold, blockSize);
-                detectedBlocks = stringSimilarity.GetSimilarLineNums(lines);
+                //detectedBlocks = stringSimilarity.GetSimilarLineNums(lines);
+                detectedBlocks = stringSimilarity.GetSimilarLinesWithBlockSize(lines);
 
                 // 출력 창 생성
                 Community.VisualStudio.Toolkit.OutputWindowPane pane = await VS.Windows.CreateOutputWindowPaneAsync("Duplicates for " + docName);
