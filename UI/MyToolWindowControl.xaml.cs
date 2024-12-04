@@ -43,6 +43,8 @@ namespace simplicode.UI
 
                 var threshold = OptionsPage.Instance.SimilarityThreshold;
                 var blockSize = OptionsPage.Instance.CodeBlockSize;
+                //var SemanticAnalysis = OptionsPage.Instance.SemanticAnalysis;
+                //var API_Key = OptionsPage.Instance.OpenAI_API_Key;
                 var stringSimilarity = new StringSimilarity(threshold, blockSize);
                 //detectedBlocks = stringSimilarity.GetSimilarLineNums(lines);
                 detectedBlocks = stringSimilarity.GetSimilarLinesWithBlockSize(lines);
