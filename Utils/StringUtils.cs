@@ -49,7 +49,7 @@ namespace simplicode.Utils
         public static bool IsValidLine(string str)
         {
             if (str == null) return false;
-            if (IsFunctionDeclaration(str) || IsComment(str) || IsInclude(str) || IsMultiLineComment(str)) return false;
+            if (IsComment(str) || IsMultiLineComment(str) || IsInclude(str) || IsFunctionDeclaration(str) || IsRedundantUnrealFunc(str)) return false;
             else return true;
         }
 
@@ -67,21 +67,11 @@ namespace simplicode.Utils
             return currentLineNum;
         }
 
-        public static IEnumerable<string> SplitToLines(this string input)
+        //Returns whether line is functions used in Unreal Engine to debug/test during development
+        public static bool IsRedundantUnrealFunc(string str)
         {
-            if (input == null)
-            {
-                yield break;
-            }
-
-            using (System.IO.StringReader reader = new System.IO.StringReader(input))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    yield return line;
-                }
-            }
+            if (str.Contains("UE_LOG") || str.Contains("Debug")) return true;
+            return false;
         }
     }
 }

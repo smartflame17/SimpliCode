@@ -163,13 +163,13 @@ namespace simplicode.Utils
                 //get Line from block1
                 while ((line1 = reader1.ReadLine()) != null)
                 {
-
-                    if (!StringUtils.IsValidLine(line1))
+                    //Prioritize line size to reduce overhead
+                    if (line1.Length < minLineSize)
                     {
                         lineIndex1++;
                         continue;
                     }
-                    if (line1.Length < minLineSize)
+                    if (!StringUtils.IsValidLine(line1))
                     {
                         lineIndex1++;
                         continue;
@@ -184,13 +184,13 @@ namespace simplicode.Utils
                         //get Line from block2
                         while ((line2 = reader2.ReadLine()) != null)
                         {
-                            
-                            if (!StringUtils.IsValidLine(line2))
+                            //Prioritize line size to reduce overhead
+                            if (line2.Length < minLineSize)
                             {
                                 lineIndex2++;
                                 continue;
                             }
-                            if (line2.Length < minLineSize)
+                            if (!StringUtils.IsValidLine(line2))
                             {
                                 lineIndex2++;
                                 continue;
