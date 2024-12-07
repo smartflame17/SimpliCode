@@ -23,6 +23,15 @@
 					<LocCanonicalName>.simplicode.OpenToolWindowCommand</LocCanonicalName>
 				</Strings>
 			</Button>
+			<Button guid="simplicode" id="SemanticAnalysis" priority="0x0101" type="Button">
+				<Parent guid="simplicode" id="MyMenuGroup"/>
+				<Icon guid="ImageCatalogGuid" id="StatusInformation"/>
+				<CommandFlag>IconIsMoniker</CommandFlag>
+				<Strings>
+					<ButtonText>Semantic Analysis</ButtonText>
+					<LocCanonicalName>.simplicode.SemanticAnalysis</LocCanonicalName>
+				</Strings>
+			</Button>
 		</Buttons>
 	</Commands>
 
@@ -30,6 +39,7 @@
 		<GuidSymbol name="simplicode" value="{aa76e3f7-f95c-46ef-bfd7-5c9a8da6a8ac}">
 			<IDSymbol name="MyMenuGroup" value="0x0001"/>
 			<IDSymbol name="OpenToolWindowCommand" value="0x0100"/>
+			<IDSymbol name="SemanticAnalysis" value="0x0101"/>
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>

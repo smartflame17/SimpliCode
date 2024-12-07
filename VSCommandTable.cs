@@ -22,5 +22,6 @@ namespace simplicode
     {
         public const int MyMenuGroup = 0x0001;
         public const int OpenToolWindowCommand = 0x0100;
+        public const int SemanticAnalysis = 0x0101;
     }
 }

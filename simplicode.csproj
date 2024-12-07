@@ -46,6 +46,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="Commands\GetSimilarLines.cs" />
+    <Compile Include="Commands\SemanticAnalysis.cs" />
     <Compile Include="Commands\OpenToolWindowCommand.cs" />
     <Compile Include="Options\OptionsPage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
